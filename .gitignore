@@ -33,5 +33,7 @@ venv/
 .idea/
 __pycache__/
 .env
+
 *.pyc
 *.pdf
+*.iml
