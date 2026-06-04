@@ -1,0 +1,26 @@
+[
+    {
+        "flight_no": "AI101",
+        "source": "New York",
+        "destination": "London",
+        "date": "2026-08-15",
+        "class": "Business",
+        "price": 1200
+    },
+    {
+        "flight_no": "BA205",
+        "source": "New York",
+        "destination": "London",
+        "date": "2026-08-15",
+        "class": "Business",
+        "price": 1100
+    },
+    {
+        "flight_no": "UA300",
+        "source": "New York",
+        "destination": "London",
+        "date": "2026-08-15",
+        "class": "Business",
+        "price": 1300
+    }
+]
