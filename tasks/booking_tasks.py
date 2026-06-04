@@ -1,6 +1,5 @@
-# tasks/booking_tasks.py
-
 from crewai import Task
+
 from agents.travel_agents import (
     flight_agent,
     seat_agent,
@@ -8,65 +7,85 @@ from agents.travel_agents import (
     ticket_agent
 )
 
-flight_task = Task(
-    description="""
-    User wants to travel:
 
-    Source: New York
-    Destination: London
-    Date: 2026-08-15
-    Class: Business
+def create_tasks(booking):
 
-    Available Flights:
+    flight_task = Task(
+        description=f"""
+    Select best flight.
+
+    Source: {booking.source}
+    Destination: {booking.destination}
+
+    Flights:
 
     AI101 - $1200
     BA205 - $1100
     UA300 - $1300
 
-    Select the best flight and explain why.
-    """,
-    expected_output="""
-    Selected flight with reasoning.
-    """,
-    agent=flight_agent
-)
+    Return ONLY valid JSON.
 
-seat_task = Task(
-    description="""
-    The traveler prefers a window seat.
-
-    Recommend the best available seat.
+    {{
+        "flight_number": "",
+        "price": 0
+    }}
     """,
-    expected_output="""
-    Seat selection with reasoning.
-    """,
-    agent=seat_agent
-)
+        expected_output="Valid JSON",
+        agent=flight_agent
+    )
 
-meal_task = Task(
-    description="""
-    The traveler prefers vegetarian food.
+    seat_task = Task(
+        description=f"""
+    Flight:
 
-    Recommend the best meal option.
-    """,
-    expected_output="""
-    Meal recommendation.
-    """,
-    agent=meal_agent
-)
+    {booking.selected_flight}
 
-ticket_task = Task(
-    description="""
-    Create a final travel summary using:
+    Seat Preference:
 
-    - Selected flight
-    - Seat selection
-    - Meal recommendation
+    {booking.seat_preference}
 
-    Present it professionally.
+    Return ONLY valid JSON.
+
+    {{
+        "seat_number": ""
+    }}
     """,
-    expected_output="""
-    Complete booking summary.
+        expected_output="Valid JSON",
+        agent=seat_agent
+    )
+
+    meal_task = Task(
+        description=f"""
+    Flight:
+
+    {booking.selected_flight}
+
+    Meal Preference:
+
+    {booking.meal_preference}
+
+    Return ONLY valid JSON.
+
+    {{
+        "meal_name": ""
+    }}
     """,
-    agent=ticket_agent
-)
+        expected_output="Valid JSON",
+        agent=meal_agent
+    )
+
+    ticket_task = Task(
+        description="""
+        Create a professional travel itinerary
+        using previous task outputs.
+        """,
+        expected_output="Final booking summary.",
+        agent=ticket_agent
+    )
+
+    return [
+        flight_task,
+        seat_task,
+        meal_task,
+        ticket_task
+    ]

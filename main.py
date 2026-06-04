@@ -1,6 +1,19 @@
-# main.py
+from crewai import Crew
 
-from crewai import Crew, Process
+from agents.travel_agents import (
+    coordinator_agent,
+    flight_agent,
+    seat_agent,
+    meal_agent,
+    ticket_agent
+)
+
+from booking_state import BookingState
+from booking_engine import (
+    extract_flight,
+    extract_seat,
+    extract_meal
+)
 
 from agents.travel_agents import (
     flight_agent,
@@ -9,34 +22,195 @@ from agents.travel_agents import (
     ticket_agent
 )
 
-from tasks.booking_tasks import (
-    flight_task,
-    seat_task,
-    meal_task,
-    ticket_task
+from crewai import Task
+
+from flight_repository import get_available_flights
+
+
+print("\n=== Flight Booking Agent ===\n")
+
+source = input("Source City: ")
+destination = input("Destination City: ")
+journey_date = input("Journey Date (YYYY-MM-DD): ")
+travel_class = input("Class (Economy/Business): ")
+seat_pref = input("Seat Preference: ")
+meal_pref = input("Meal Preference: ")
+
+booking = BookingState(
+    source,
+    destination,
+    journey_date,
+    travel_class,
+    seat_pref,
+    meal_pref
 )
 
-crew = Crew(
-    agents=[
-        flight_agent,
-        seat_agent,
-        meal_agent,
-        ticket_agent
-    ],
-    tasks=[
-        flight_task,
-        seat_task,
-        meal_task,
-        ticket_task
-    ],
-    process=Process.sequential,
-    verbose=True
+print("\nSTEP 0 - Travel Coordinator\n")
+
+from crewai import Task, Crew
+
+coordinator_task = Task(
+    description=f"""
+Validate the travel request.
+
+Source: {booking.source}
+Destination: {booking.destination}
+Date: {booking.journey_date}
+Class: {booking.travel_class}
+Seat Preference: {booking.seat_preference}
+Meal Preference: {booking.meal_preference}
+
+Confirm that booking can proceed.
+""",
+    expected_output="Booking validation summary",
+    agent=coordinator_agent
 )
 
-result = crew.kickoff()
+coordinator_result = Crew(
+    agents=[coordinator_agent],
+    tasks=[coordinator_task]
+).kickoff()
+
+print(coordinator_result)
+
+print("\nSTEP 1 - Flight Selection\n")
+
+available_flights = get_available_flights()
+
+flight_task = Task(
+    description=f"""
+Select best flight.
+
+Source: {booking.source}
+Destination: {booking.destination}
+
+Available Flights:
+
+{available_flights}
+
+Return ONLY valid JSON.
+
+{{
+    "flight_number": "",
+    "price": 0
+}}
+""",
+    expected_output="JSON",
+    agent=flight_agent
+)
+
+flight_result = Crew(
+    agents=[flight_agent],
+    tasks=[flight_task]
+).kickoff()
+
+from json_utils import parse_json_response
+
+flight_json = parse_json_response(
+    flight_result
+)
+
+booking.selected_flight = (
+    flight_json["flight_number"]
+)
+
+booking.flight_price = (
+    flight_json["price"]
+)
+
+print("Chosen Flight:", booking.selected_flight)
+
+print("\nSTEP 2 - Seat Selection\n")
+
+seat_task = Task(
+    description=f"""
+Flight:
+
+{booking.selected_flight}
+
+Seat Preference:
+
+{booking.seat_preference}
+
+Choose best seat.
+""",
+    expected_output="Selected seat",
+    agent=seat_agent
+)
+
+seat_result = Crew(
+    agents=[seat_agent],
+    tasks=[seat_task]
+).kickoff()
+
+seat_json = parse_json_response(
+    seat_result
+)
+
+booking.selected_seat = (
+    seat_json["seat_number"]
+)
+
+print("Chosen Seat:", booking.selected_seat)
+
+print("\nSTEP 3 - Meal Selection\n")
+
+meal_task = Task(
+    description=f"""
+Flight:
+
+{booking.selected_flight}
+
+Meal Preference:
+
+{booking.meal_preference}
+
+Recommend meal.
+""",
+    expected_output="Selected meal",
+    agent=meal_agent
+)
+
+meal_result = Crew(
+    agents=[meal_agent],
+    tasks=[meal_task]
+).kickoff()
+
+meal_json = parse_json_response(
+    meal_result
+)
+
+booking.selected_meal = (
+    meal_json["meal_name"]
+)
+
+print("Chosen Meal:", booking.selected_meal)
+
+print("\nSTEP 4 - Ticket Generation\n")
+
+ticket_task = Task(
+    description=f"""
+Generate final itinerary.
+
+Source: {booking.source}
+Destination: {booking.destination}
+Date: {booking.journey_date}
+
+Flight: {booking.selected_flight}
+Seat: {booking.selected_seat}
+Meal: {booking.selected_meal}
+""",
+    expected_output="Final ticket",
+    agent=ticket_agent
+)
+
+ticket_result = Crew(
+    agents=[ticket_agent],
+    tasks=[ticket_task]
+).kickoff()
 
 print("\n")
-print("=" * 50)
-print("FINAL BOOKING RESULT")
-print("=" * 50)
-print(result)
+print("=" * 60)
+print("FINAL TICKET")
+print("=" * 60)
+print(ticket_result)

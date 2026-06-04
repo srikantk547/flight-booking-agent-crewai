@@ -3,6 +3,18 @@
 from crewai import Agent
 from agents.llm_config import llm
 
+coordinator_agent = Agent(
+    role="Travel Coordinator",
+    goal="Manage the entire booking workflow",
+    backstory="""
+    You are responsible for coordinating all
+    travel booking activities and ensuring
+    the booking is completed successfully.
+    """,
+    llm=llm,
+    verbose=True
+)
+
 flight_agent = Agent(
     role="Flight Search Specialist",
     goal="Find the best available flight",
@@ -19,8 +31,16 @@ seat_agent = Agent(
     role="Seat Selection Specialist",
     goal="Select the best seat",
     backstory="""
-    You specialize in passenger comfort and
-    seat optimization.
+    You MUST return valid JSON only.
+
+    Example:
+
+    {
+      "seat_number": "21A"
+    }
+
+    Do not add explanations.
+    Do not add markdown.
     """,
     llm=llm,
     verbose=True
@@ -28,9 +48,18 @@ seat_agent = Agent(
 
 meal_agent = Agent(
     role="Meal Selection Specialist",
-    goal="Recommend the best meal",
+    goal="Recommend meal",
     backstory="""
-    You are an airline catering expert.
+    You MUST return valid JSON only.
+
+    Example:
+
+    {
+      "meal_name": "Vegetarian Meal"
+    }
+
+    Do not add explanations.
+    Do not add markdown.
     """,
     llm=llm,
     verbose=True
