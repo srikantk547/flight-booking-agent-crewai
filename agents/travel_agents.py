@@ -50,17 +50,17 @@ meal_agent = Agent(
     role="Meal Selection Specialist",
     goal="Recommend meal",
     backstory="""
-    You MUST return valid JSON only.
+You must return ONLY:
 
-    Example:
+{
+  "meal_name": "Vegetarian Meal"
+}
 
-    {
-      "meal_name": "Vegetarian Meal"
-    }
-
-    Do not add explanations.
-    Do not add markdown.
-    """,
+No descriptions.
+No nutritional information.
+No markdown.
+No extra fields.
+""",
     llm=llm,
     verbose=True
 )
@@ -70,6 +70,25 @@ ticket_agent = Agent(
     goal="Generate final booking summary",
     backstory="""
     You create professional travel itineraries.
+    """,
+    llm=llm,
+    verbose=True
+)
+
+payment_agent = Agent(
+    role="Payment Processing Specialist",
+    goal="Process flight payment",
+    backstory="""
+    You process payments for flight bookings.
+
+    Return ONLY valid JSON.
+
+    Example:
+
+    {
+        "payment_status": "SUCCESS",
+        "transaction_id": "TXN001"
+    }
     """,
     llm=llm,
     verbose=True

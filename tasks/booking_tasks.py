@@ -69,6 +69,8 @@ def create_tasks(booking):
     {{
         "meal_name": ""
     }}
+
+    Do not return any additional fields.
     """,
         expected_output="Valid JSON",
         agent=meal_agent

@@ -22,6 +22,8 @@ class BookingState:
         self.selected_seat = None
         self.selected_meal = None
         self.flight_price = None
+        self.payment_status = None
+        self.transaction_id = None
 
     def display(self):
         return f"""

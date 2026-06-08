@@ -16,9 +16,11 @@ from booking_engine import (
 )
 
 from agents.travel_agents import (
+    coordinator_agent,
     flight_agent,
     seat_agent,
     meal_agent,
+    payment_agent,
     ticket_agent
 )
 
@@ -186,19 +188,88 @@ booking.selected_meal = (
 
 print("Chosen Meal:", booking.selected_meal)
 
-print("\nSTEP 4 - Ticket Generation\n")
+
+payment_task = Task(
+    description=f"""
+Process payment.
+
+Flight:
+{booking.selected_flight}
+
+Amount:
+${booking.flight_price}
+
+Return ONLY valid JSON.
+
+{{
+    "payment_status": "SUCCESS",
+    "transaction_id": "TXN001"
+}}
+""",
+    expected_output="Valid JSON",
+    agent=payment_agent
+)
+
+payment_result = Crew(
+    agents=[payment_agent],
+    tasks=[payment_task]
+).kickoff()
+
+print("\nRAW PAYMENT OUTPUT:")
+print(payment_result)
+
+payment_json = parse_json_response(
+    payment_result
+)
+
+booking.payment_status = (
+    payment_json["payment_status"]
+)
+
+booking.transaction_id = (
+    payment_json["transaction_id"]
+)
+
+print(
+    "Payment Status:",
+    booking.payment_status
+)
+
+print(
+    "Transaction ID:",
+    booking.transaction_id
+)
+
+
+print("\nSTEP 5 - Ticket Generation\n")
 
 ticket_task = Task(
     description=f"""
 Generate final itinerary.
 
-Source: {booking.source}
-Destination: {booking.destination}
-Date: {booking.journey_date}
+Source:
+{booking.source}
 
-Flight: {booking.selected_flight}
-Seat: {booking.selected_seat}
-Meal: {booking.selected_meal}
+Destination:
+{booking.destination}
+
+Date:
+{booking.journey_date}
+
+Flight:
+{booking.selected_flight}
+
+Seat:
+{booking.selected_seat}
+
+Meal:
+{booking.selected_meal}
+
+Payment Status:
+{booking.payment_status}
+
+Transaction ID:
+{booking.transaction_id}
 """,
     expected_output="Final ticket",
     agent=ticket_agent
