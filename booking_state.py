@@ -1,4 +1,4 @@
-# booking_state.py
+import random
 
 class BookingState:
 
@@ -24,6 +24,8 @@ class BookingState:
         self.flight_price = None
         self.payment_status = None
         self.transaction_id = None
+        self.pnr = f"PNR{random.randint(100000,999999)}"
+        self.email = None
 
     def display(self):
         return f"""

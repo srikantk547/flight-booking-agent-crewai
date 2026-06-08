@@ -28,6 +28,21 @@ from crewai import Task
 
 from flight_repository import get_available_flights
 
+from pdf_generator import generate_ticket_pdf
+
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+from email_sender import send_ticket_email
+
+import re
+
+def validate_email(email):
+    pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+    return re.match(pattern, email)
+
 
 print("\n=== Flight Booking Agent ===\n")
 
@@ -37,6 +52,11 @@ journey_date = input("Journey Date (YYYY-MM-DD): ")
 travel_class = input("Class (Economy/Business): ")
 seat_pref = input("Seat Preference: ")
 meal_pref = input("Meal Preference: ")
+email_address = input("Email Address: ")
+
+if not validate_email(email_address):
+    print("Invalid email format.")
+    exit()
 
 booking = BookingState(
     source,
@@ -46,6 +66,8 @@ booking = BookingState(
     seat_pref,
     meal_pref
 )
+
+booking.email = email_address
 
 print("\nSTEP 0 - Travel Coordinator\n")
 
@@ -61,10 +83,14 @@ Date: {booking.journey_date}
 Class: {booking.travel_class}
 Seat Preference: {booking.seat_preference}
 Meal Preference: {booking.meal_preference}
+Email Address: {booking.email}
 
-Confirm that booking can proceed.
+Verify:
+1. Email format appears valid
+2. Required fields are present
+3. Booking can proceed
 """,
-    expected_output="Booking validation summary",
+    expected_output="Validation summary",
     agent=coordinator_agent
 )
 
@@ -285,3 +311,25 @@ print("=" * 60)
 print("FINAL TICKET")
 print("=" * 60)
 print(ticket_result)
+pdf_file = generate_ticket_pdf(
+    booking
+)
+
+print(
+    f"\nPDF Generated: {pdf_file}"
+)
+
+send_ticket_email(
+    sender_email=os.getenv(
+        "GMAIL_ADDRESS"
+    ),
+    app_password=os.getenv(
+        "GMAIL_APP_PASSWORD"
+    ),
+    recipient_email=booking.email,
+    pdf_file=pdf_file
+)
+
+print(
+    f"\nTicket emailed to {booking.email}"
+)
